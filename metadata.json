@@ -1,0 +1,5 @@
+{
+  "name": "Aether Universal Intelligence",
+  "description": "Next-generation RAG platform for synthesizing complex documents, images, and codebases into actionable intelligence.",
+  "requestFramePermissions": ["camera"]
+}
