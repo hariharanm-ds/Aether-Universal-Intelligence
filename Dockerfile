@@ -23,7 +23,6 @@ WORKDIR /app
 
 # Copy backend files
 COPY backend /app/backend
-COPY .env /app/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r /app/backend/requirements.txt
