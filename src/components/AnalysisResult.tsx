@@ -1,30 +1,4 @@
-===== Build Queued at 2026-04-17 08:44:35 / Commit SHA: 6aac417 =====
-
---> FROM docker.io/library/python:3.11-slim@sha256:233de06753d30d120b1a3ce359d8d3be8bda78524cd8f520c99883bfe33964cf
-DONE 0.0s
-
---> FROM docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
-DONE 0.0s
-
---> COPY package*.json ./
-CACHED
-
---> WORKDIR /app
-CACHED
-
-CACHED
-
---> RUN curl -fsSL https://ollama.ai/install.sh | sh
-CACHED
-
---> COPY backend /app/backend
-CACHED
-
---> COPY .env /app/
-
---> ERROR: failed to calculate checksum of ref jiln47r2sz42eee8vebvvnpog::y0sd83rcqap2zpe9too25tp5c: "/.env": not found
-
- import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 import { 

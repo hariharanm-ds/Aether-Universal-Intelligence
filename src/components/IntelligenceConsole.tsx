@@ -26,7 +26,7 @@ import { cn } from '../lib/utils';
 import DocumentScanner from './DocumentScanner';
 import AnalysisResult from './AnalysisResult';
 import KnowledgebaseManager from './KnowledgebaseManager';
-import { analyzeFileData, IntelligenceResult } from '../services/llama';
+import { analyzeFileData, IntelligenceResult } from '../services/groq';
 
 const PIPELINE_STEPS = [
   { id: 'query', label: 'Query Analysis', icon: MessageSquare },
@@ -69,7 +69,7 @@ export default function IntelligenceConsole() {
 
   // Advanced Config State
   const [useGrounding, setUseGrounding] = useState(true);
-  const [model, setModel] = useState('llama-2-7b');
+  const [model, setModel] = useState('llama-3.3-70b-versatile');
   const [temperature, setTemperature] = useState(0.4);
   const [showConfig, setShowConfig] = useState(false);
   // RAG State
@@ -217,108 +217,16 @@ export default function IntelligenceConsole() {
 
   return (
     <div className="min-h-screen bg-aether-bg pt-24 pb-20 px-4 md:px-8 lg:px-12">
-      <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <div className="max-w-[1800px] mx-auto">
         
-        {/* Left Sidebar: System Vitals */}
-        <motion.div 
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          className={cn(
-            "space-y-6 transition-all duration-500",
-            result ? "lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8 order-last" : "lg:col-span-3"
-          )}
-        >
-          <div className="glass-panel p-6 border-l-4 border-aether-accent">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                <Activity className="w-4 h-4 text-aether-accent animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-widest text-aether-accent">System Vitals</span>
-              </div>
-              <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-            </div>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-[10px] uppercase tracking-widest text-aether-muted">
-                  <span>Neural Load</span>
-                  <span className="font-mono text-white">{vitals.cpu.toFixed(1)}%</span>
-                </div>
-                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-aether-accent"
-                    animate={{ width: `${vitals.cpu}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                  <span className="block text-[8px] uppercase tracking-widest text-aether-muted mb-1">Memory</span>
-                  <span className="text-xs font-mono text-white">{vitals.memory.toFixed(1)} GB</span>
-                </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                  <span className="block text-[8px] uppercase tracking-widest text-aether-muted mb-1">Nodes</span>
-                  <span className="text-xs font-mono text-white">{vitals.nodes} Active</span>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
-                <div className="flex items-center space-x-3">
-                  <Shield className="w-4 h-4 text-aether-muted" />
-                  <span className="text-[10px] uppercase tracking-tighter text-aether-muted">Security Level</span>
-                </div>
-                <span className="text-xs font-mono text-aether-accent">OMEGA</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-panel p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                <History className="w-4 h-4 text-aether-muted" />
-                <span className="text-xs font-bold uppercase tracking-widest text-aether-muted">Neural History</span>
-              </div>
-              {history.length > 0 && (
-                <button 
-                  onClick={() => setHistory([])}
-                  className="text-[8px] uppercase tracking-widest text-red-500/60 hover:text-red-500 transition-colors"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              <AnimatePresence mode="popLayout">
-                {history.length === 0 ? (
-                  <p className="text-[10px] text-aether-muted uppercase tracking-widest text-center py-10 opacity-50">No recent synthesis</p>
-                ) : (
-                  history.map((item, i) => (
-                    <motion.div 
-                      key={i}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-4 rounded-xl bg-white/5 border border-white/5 hover:border-aether-accent/30 transition-all group cursor-pointer"
-                      onClick={() => setQuery(item.query)}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="px-2 py-0.5 rounded bg-aether-accent/20 text-aether-accent text-[8px] font-bold tracking-tighter uppercase">{item.type}</span>
-                        <span className="text-[8px] text-aether-muted font-mono">{item.timestamp.toLocaleTimeString()}</span>
-                      </div>
-                      <p className="text-[11px] text-white/80 line-clamp-2 leading-relaxed group-hover:text-white transition-colors">{item.query}</p>
-                    </motion.div>
-                  ))
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </motion.div>
+        
 
         {/* Main Console: Intelligence Synthesis */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="lg:col-span-12 space-y-12"
+          className="lg:col-span-9 space-y-12"
         >
           {/* Header HUD */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -396,10 +304,10 @@ export default function IntelligenceConsole() {
               </motion.div>
             )}
           </AnimatePresence>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          
             {/* Left Column: Input & Controls */}
-            <div className="space-y-10 lg:sticky lg:top-12 z-20">
+            <div className="space-y-10 w-full">
               {/* Knowledge Base Manager */}
               <KnowledgebaseManager isOpen={showKnowledgebase} onToggle={() => setShowKnowledgebase(!showKnowledgebase)} />
 
@@ -476,9 +384,9 @@ export default function IntelligenceConsole() {
                             onChange={(e) => setModel(e.target.value)}
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:border-aether-accent outline-none"
                           >
-                            <option value="llama3">LLaMA 3</option>
-                            <option value="llama2">LLaMA 2</option>
-                            <option value="mistral">Mistral</option>
+                            <option value="llama-3.3-70b-versatile">LLaMA 3.3 70B (Recommended)</option>
+                            <option value="llama-3.1-8b-instant">LLaMA 3.1 8B (Fast)</option>
+                            <option value="openai/gpt-oss-120b">GPT-OSS 120B (Ultra Fast)</option>
                           </select>
                         </div>
                         <div className="space-y-3">
@@ -572,7 +480,7 @@ export default function IntelligenceConsole() {
             </div>
 
             {/* Right Column: Results & Errors */}
-            <div className="w-full">
+            <div className="space-y-10 w-full">
               <AnimatePresence mode="wait">
                 {result && (
                   <motion.div

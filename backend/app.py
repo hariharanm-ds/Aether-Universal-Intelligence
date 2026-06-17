@@ -1,11 +1,13 @@
 import os
 from typing import Dict, Optional
+from io import BytesIO
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from pypdf import PdfReader
 
-from llama_service import analyze_query
+from groq_service import analyze_query
 from rag_service import (
     ingest_document,
     retrieve_context,
@@ -14,7 +16,7 @@ from rag_service import (
     clear_all,
 )
 
-app = FastAPI(title="Aether LLaMA RAG Backend")
+app = FastAPI(title="Aether Groq RAG Backend")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,7 +37,7 @@ class HistoryItem(BaseModel):
 
 class AnalyzeConfig(BaseModel):
     useGrounding: Optional[bool] = False
-    model: Optional[str] = "llama3"
+    model: Optional[str] = "llama-3.3-70b-versatile"
     temperature: Optional[float] = 0.4
     history: Optional[list[HistoryItem]] = None
 
@@ -55,7 +57,7 @@ class RAGQueryRequest(BaseModel):
 
 @app.get("/api/health")
 def health() -> Dict[str, str]:
-    return {"status": "ok", "backend": "Aether LLaMA RAG"}
+    return {"status": "ok", "backend": "Aether Groq RAG"}
 
 
 @app.post("/api/analyze")
@@ -126,17 +128,39 @@ USER QUESTION:
 
 @app.post("/api/ingest")
 async def ingest(file: UploadFile = File(...), doc_id: Optional[str] = None) -> Dict[str, object]:
-    """Ingest a document into the knowledge base."""
+    """Ingest a document into the knowledge base. Supports PDF, TXT, JSON, and other text formats."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename is required.")
 
     try:
         # Read file content
         content = await file.read()
-        text = content.decode("utf-8", errors="ignore")
+        
+        # Determine MIME type from filename
+        filename_lower = file.filename.lower()
+        mime_type = file.content_type or "application/octet-stream"
+        
+        # Extract text based on file type
+        if filename_lower.endswith('.pdf') or mime_type == 'application/pdf':
+            try:
+                pdf_reader = PdfReader(BytesIO(content))
+                text = ""
+                for page in pdf_reader.pages:
+                    text += page.extract_text()
+                if not text.strip():
+                    raise HTTPException(status_code=400, detail="PDF is empty or contains only images.")
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"PDF parsing failed: {str(e)}")
+        else:
+            # Try to decode as UTF-8 text
+            try:
+                text = content.decode("utf-8")
+            except UnicodeDecodeError:
+                # Try latin-1 as fallback
+                text = content.decode("latin-1", errors="ignore")
 
         if not text.strip():
-            raise HTTPException(status_code=400, detail="File is empty or not text.")
+            raise HTTPException(status_code=400, detail="File is empty or could not be parsed.")
 
         # Use filename as doc_id if not provided
         doc_id = doc_id or file.filename.replace(".", "_").replace("/", "_")
@@ -150,6 +174,8 @@ async def ingest(file: UploadFile = File(...), doc_id: Optional[str] = None) -> 
 
         return result
 
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {exc}")
 

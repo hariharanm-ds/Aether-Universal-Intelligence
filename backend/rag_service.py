@@ -9,10 +9,18 @@ CHROMA_DATA_DIR = os.path.join(os.path.dirname(__file__), "rag_data")
 os.makedirs(CHROMA_DATA_DIR, exist_ok=True)
 
 CHROMA_CLIENT = chromadb.PersistentClient(path=CHROMA_DATA_DIR)
-EMBEDDING_MODEL = SentenceTransformer("all-MiniLM-L6-v2")  # Lightweight, fast embeddings
+EMBEDDING_MODEL = None  # Lazy-loaded on first use
 
 # Chroma collection for documents
 COLLECTION_NAME = "aether_knowledge_base"
+
+
+def get_embedding_model():
+    """Lazy-load embedding model on first use."""
+    global EMBEDDING_MODEL
+    if EMBEDDING_MODEL is None:
+        EMBEDDING_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+    return EMBEDDING_MODEL
 
 
 def get_or_create_collection():
